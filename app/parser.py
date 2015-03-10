@@ -38,7 +38,8 @@ def remove_stopwords():
 
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
-
+	nltk_stopwords = nltk.corpus.stopwords.words('english')
+	
 	stopwords = {}
 	with open(stopword_data) as infile:
 		for line in infile:
