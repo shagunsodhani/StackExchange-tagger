@@ -18,7 +18,7 @@ def connect(app_name = "tagger", config_path = os.path.join(os.path.abspath(os.p
     port=config.get(app_name,"port")
     db_name=config.get(app_name,"db_name")
     try:
-       client = pymongo.MongoClient(host, port)
+        client = pymongo.MongoClient(host, int(port))
         db = client[db_name]
         return db
     except pymongo.errors, e:
