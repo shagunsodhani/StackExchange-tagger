@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import time
+import string
 
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -26,6 +27,7 @@ except ImportError as exc:
 
 test_data = "data/processed.csv"
 stopword_data = "data/stopword.txt"
+replaceword_data = "data/replaceword.txt"
 
 def preprocess_dataset():
 	count = 0
@@ -46,11 +48,33 @@ def remove_stopwords():
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
 	
 	stopwords = {}
+	replace_words = {}
+	stopword_count = 0
+	takenword_count = 0
+
 	with open(stopword_data) as infile:
 		for line in infile:
+			i = line.strip().split()
+			for token in i:
+				a = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
+				if a not in stopwords:
+					stopwords[a] = 1
+
+	for token in nltk_stopwords:
+		a = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
+		if a not in stopwords:
+			stopwords[a] = 1
+
+	for a in string.punctuation:
+		if a not in replace_words:
+			replace_words[a] = 1
+	
+	with open(replaceword_data) as infile:
+
+		for line in infile:
 			a = line.strip()
-			if a not in stopwords:
-				stopwords[a] = 1
+			if a not in replace_words:
+				replace_words[a] = 1			
 
 	with open(test_data) as infile:
 		for line in infile:
@@ -65,15 +89,18 @@ def remove_stopwords():
 				#print body  
 				soup = BeautifulSoup(body)
 				body = soup.get_text()
-				print body
-			#if striped_line:
-				#print striped_line.split(',',4)
-			#if striped_line:
-			#	body = striped_line.split(",", 2)[2]
-			#	list_token = nltk.word_tokenize(body)
-			#	for token in list_token:
-			#		processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
-			#		print processed_token
-				
+				for i in replace_words:
+					body = body.replace(i, ' ')
+				list_token = nltk.word_tokenize(body)
+				for token in list_token:
+					processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+					if(processed_token in stopwords):
+						stopword_count+=1
+					else:
+						takenword_count+=1
+						print processed_token
+			print "\n"
+	print "stopword_count : ", stopword_count
+	print "takenword_count : ", takenword_count	
 #preprocess_dataset()
 remove_stopwords()
