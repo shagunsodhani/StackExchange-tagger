@@ -98,9 +98,32 @@ def remove_stopwords():
 						stopword_count+=1
 					else:
 						takenword_count+=1
-						print processed_token
+						try:
+							print processed_token
+						except UnicodeEncodeError as e:
+							print "Unicode Encode Error ", e
 			print "\n"
 	print "stopword_count : ", stopword_count
 	print "takenword_count : ", takenword_count	
+
+def fetch_tags():
+	tags = {}
+	with open(test_data) as infile:
+		for line in infile:
+			striped_line = line.strip().replace('"','')
+			if striped_line :
+				a = striped_line.split(',',2)
+				post_id = str(a[0])
+				title = str(a[1])
+				a = a[2].rsplit(',',1)
+				tag_list = a[1].split(' ')
+				for tag in tag_list:
+					if tag not in tags:
+						tags[tag] = 1
+						print tag
+
+
+
 #preprocess_dataset()
 remove_stopwords()
+#fetch_tags()
