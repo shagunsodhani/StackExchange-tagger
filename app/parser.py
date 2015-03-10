@@ -3,6 +3,7 @@ import os
 import json
 import time
 import string
+import operator
 
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -106,7 +107,8 @@ def remove_stopwords():
 	print "stopword_count : ", stopword_count
 	print "takenword_count : ", takenword_count	
 
-def fetch_tags():
+def fetch_top_tags(k = 100):
+	#script to fetch top k most popular tags from raw data
 	tags = {}
 	with open(test_data) as infile:
 		for line in infile:
@@ -119,11 +121,13 @@ def fetch_tags():
 				tag_list = a[1].split(' ')
 				for tag in tag_list:
 					if tag not in tags:
-						tags[tag] = 1
-						print tag
-
-
+						tags[tag]=1
+					else:
+						tags[tag]+=1
+	sorted_tags = sorted(tags.items(), key=operator.itemgetter(1), reverse = True)
+	for i in range(0, k):
+		print sorted_tags[i][0]	 
 
 #preprocess_dataset()
-remove_stopwords()
-#fetch_tags()
+#remove_stopwords()
+fetch_top_tags()
