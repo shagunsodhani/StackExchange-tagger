@@ -51,8 +51,8 @@ def generate_data(tag_count, question_count):
             striped_line = line.strip()
             if striped_line:
                 a = striped_line.split(',', 2)
-                post_id = str(a[0]).replace('\"', ' ').strip()
-                title = str(a[1]).replace('\"', ' ').strip()
+                post_id = str(a[0]).replace('\"', '').strip()
+                title = str(a[1]).replace('\"', '').strip()
                 a = a[2].rsplit(',', 1)
                 tag_list = a[1].split()
                 for tag in tag_list:
@@ -66,7 +66,7 @@ def generate_data(tag_count, question_count):
                 for code_snippet in soup.find_all('code'):
                     temp_code = code_snippet.get_text().strip()
                     code+= temp_code + "\n"
-                    body.replace(temp_code, "")
+                    body = body.replace(temp_code, "")
                 body = ' '.join(body.split())
                 post = {}
                 post['post_id'] = post_id

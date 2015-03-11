@@ -44,6 +44,7 @@ def preprocess_dataset():
 
 def remove_stopwords():
 
+
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
@@ -91,7 +92,8 @@ def remove_stopwords():
 				soup = BeautifulSoup(body)
 				body = soup.get_text()
 				for i in replace_words:
-					body = body.replace(i, ' ')
+					body = body.replace(i, '')
+				body = ' '.join(body.split())	
 				list_token = nltk.word_tokenize(body)
 				for token in list_token:
 					processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
