@@ -60,13 +60,20 @@ def generate_data(tag_count, question_count):
                         continue
                 count+=1;
                 body = a[0]
+                code = ""
                 soup = BeautifulSoup(body)
                 body = soup.get_text()
+                for code_snippet in soup.find_all('code'):
+                    temp_code = code_snippet.get_text().strip()
+                    code+= temp_code + "\n"
+                    body.replace(temp_code, "")
+                body = ' '.join(body.split())
                 post = {}
                 post['post_id'] = post_id
                 post['title'] = title
                 post['body'] = body
                 post['tag'] = tag_list
+                post['code'] = code
                 mongo_id = db.insert(post)
                 if(count%10000 == 0):
                     print count, " number of questions processed"
