@@ -89,16 +89,19 @@ def get_bodywords():
 	for post in db.find():
 		body = post['body'].strip()
 		for i in replace_words:
-			body = body.replace(i, ' ')
+			body = body.replace(i, '')
 		list_token = nltk.word_tokenize(body)
 		for token in list_token:
+			# print token
 			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
 			if processed_token not in stopwords:
 				if processed_token not in word:
-					word[i]=1
+					word[processed_token]=1
+					# print processed_token
 				else:
-					word[i]+=1
+					word[processed_token]+=1
 	sorted_word = sorted(word.items(), key=operator.itemgetter(1), reverse = True)
+	print sorted_word
 	for i in sorted_word:
 		try:
 			print i[0], " : ",i[1] 

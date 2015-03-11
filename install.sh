@@ -5,6 +5,6 @@ echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.
 apt-get update
 apt-get install -y mongodb-org
 service mongod start
-pip install pymongo numpy nltk
-# python -m nltk.downloader
+pip install pymongo numpy nltk BeautifulSoup
+python -m nltk.downloader
 #To download nltk datasets
