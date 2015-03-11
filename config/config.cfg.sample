@@ -1,4 +1,6 @@
 [app-name]
+sts
 host =
 port = 
 db_name =
+collection_name = 
