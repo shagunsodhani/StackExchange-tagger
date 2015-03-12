@@ -26,9 +26,10 @@ try:
 except ImportError as exc:
 	print("Error: failed to import settings module ({})".format(exc))
 
-test_data = "data/processed.csv"
 stopword_data = "data/stopword.txt"
 replaceword_data = "data/replaceword.txt"
+test_data = "data/processed.csv"
+takeword_data = "data/take_word.txt"
 
 def get_codewords():
 	#this function is meant prints all the code segments
@@ -158,7 +159,7 @@ def get_idf():
 		for token in list_token:
 			# print token
 			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-			if processed_token not in stopwords:
+			if processed_token not in stopwords and not (processed_token.isdigit()):
 				if processed_token not in word:
 					word[processed_token]=1
 					idf[processed_token] = 1
@@ -171,9 +172,12 @@ def get_idf():
 						idf[processed_token]+=1
 
 	for i in idf:
-		if idf[i] > 8:
-			print i
-			
+		if idf[i] > 7:
+			try:
+				print i
+			except UnicodeEncodeError as e:
+				pass
+
 	# sorted_idf = sorted(idf.items(), key=operator.itemgetter(1), reverse = True)
 	# for i in sorted_idf:
 	# 	try:
@@ -181,5 +185,55 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
+def get_boolmatrix(input_size = 100000):
+	porter_stemmer = nltk.stem.porter.PorterStemmer()
+	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
+	nltk_stopwords = nltk.corpus.stopwords.words('english')
+	
+	take_words = {}
+	replace_words = {}
 
-get_idf()
+	with open(takeword_data) as infile:
+		for line in infile:
+			i = line.strip().split()
+			for token in i:
+				if token not in take_words:
+					take_words[token] = 1
+
+	for a in string.punctuation:
+		if a not in replace_words:
+			replace_words[a] = 1
+	
+	with open(replaceword_data) as infile:
+		for line in infile:
+			a = line.strip()
+			if a not in replace_words:
+				replace_words[a] = 1			
+
+	db = mongo.connect()
+
+	corpus = []
+	# count
+	for post in list(db.find().skip(1).limit(input_size)):
+		word = {}
+		body = post['body'].strip()
+		for i in replace_words:
+			body = body.replace(i, '')
+		list_token = nltk.word_tokenize(body)
+		processed_body = ""
+		for token in list_token:
+			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+			if processed_token in take_words:
+				if processed_token not in word:
+					processed_body+=processed_token+" "
+					word[processed_token]=1
+		corpus.append(processed_body.strip())
+
+	return corpus
+	vectorizer = CountVectorizer(min_df=1)
+	a = vectorizer.fit_transform(corpus)
+	b = a.toarray()
+	print b
+	# U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
+
+get_boolmatrix()
