@@ -21,7 +21,7 @@ def connect(app_name = "tagger", config_path = os.path.join(os.path.abspath(os.p
     try:
         client = pymongo.MongoClient(host, int(port))
         db = client[db_name]
-        return db['store']
+        return db[collection_name]
     except pymongo.errors, e:
         print "ERROR %d IN CONNECTION: %s" % (e.args[0], e.args[1])
         return 0
