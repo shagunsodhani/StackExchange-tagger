@@ -108,4 +108,78 @@ def get_bodywords():
 		except UnicodeEncodeError as e:
 			print "Unicode Error : ", i[1]
 
-get_bodywords()
+def get_idf():
+    #this function is meant to print the unique words with their frequency so that some potential stopwords can be removed
+
+	porter_stemmer = nltk.stem.porter.PorterStemmer()
+	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
+	nltk_stopwords = nltk.corpus.stopwords.words('english')
+	
+	stopwords = {}
+	replace_words = {}
+	stopword_count = 0
+	takenword_count = 0
+
+	with open(stopword_data) as infile:
+		for line in infile:
+			i = line.strip().split()
+			for token in i:
+				a = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
+				if a not in stopwords:
+					stopwords[a] = 1
+
+	for token in nltk_stopwords:
+		a = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
+		if a not in stopwords:
+			stopwords[a] = 1
+
+	for a in string.punctuation:
+		if a not in replace_words:
+			replace_words[a] = 1
+	
+	with open(replaceword_data) as infile:
+
+		for line in infile:
+			a = line.strip()
+			if a not in replace_words:
+				replace_words[a] = 1			
+
+	db= mongo.connect()
+	word = {}
+	idf = {}
+	flag = {} 
+
+	for post in db.find():
+		body = post['body'].strip()
+		flag = {}
+		for i in replace_words:
+			body = body.replace(i, '')
+		list_token = nltk.word_tokenize(body)
+		for token in list_token:
+			# print token
+			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+			if processed_token not in stopwords:
+				if processed_token not in word:
+					word[processed_token]=1
+					idf[processed_token] = 1
+					flag[processed_token] = 1
+					# print processed_token
+				else:
+					word[processed_token]+=1
+					if processed_token not in flag:
+						flag[processed_token] = 1
+						idf[processed_token]+=1
+
+	for i in idf:
+		if idf[i] > 8:
+			print i
+			
+	# sorted_idf = sorted(idf.items(), key=operator.itemgetter(1), reverse = True)
+	# for i in sorted_idf:
+	# 	try:
+	# 		print i[0], " : ",i[1] 
+	# 	except UnicodeEncodeError as e:
+	# 		print "Unicode Error : ", i[1]
+
+
+get_idf()
