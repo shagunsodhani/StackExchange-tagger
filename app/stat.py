@@ -26,6 +26,9 @@ try:
 except ImportError as exc:
 	print("Error: failed to import settings module ({})".format(exc))
 
+from sklearn.feature_extraction.text import CountVectorizer	
+import numpy as np
+
 stopword_data = "data/stopword.txt"
 replaceword_data = "data/replaceword.txt"
 test_data = "data/processed.csv"
@@ -229,11 +232,19 @@ def get_boolmatrix(input_size = 100000):
 					word[processed_token]=1
 		corpus.append(processed_body.strip())
 
-	return corpus
+	# return corpus
 	vectorizer = CountVectorizer(min_df=1)
 	a = vectorizer.fit_transform(corpus)
 	b = a.toarray()
-	print b
+	count = 0
+	x, y = b.shape
+	for c in np.nditer(b):
+		count+=1
+		print c,
+		print "\t",
+		if(count%y == 0):
+			print ""
+	
 	# U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
 
 get_boolmatrix()
