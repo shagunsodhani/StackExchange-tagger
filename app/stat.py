@@ -238,13 +238,13 @@ def get_boolmatrix(input_size = 100000):
 	b = a.toarray()
 	count = 0
 	x, y = b.shape
+	to_print = ""
 	for c in np.nditer(b):
+		to_print+=str(c)+"," 
 		count+=1
-		print c,
-		print "\t",
 		if(count%y == 0):
-			print ""
-	
+			print to_print
+			to_print = ""
 	# U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
 
 get_boolmatrix()
