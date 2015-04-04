@@ -26,7 +26,9 @@ try:
 except ImportError as exc:
 	print("Error: failed to import settings module ({})".format(exc))
 
-from sklearn.feature_extraction.text import CountVectorizer	
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 import numpy as np
 
 stopword_data = "data/stopword.txt"
@@ -53,11 +55,9 @@ def get_codewords():
 
 def get_bodywords():
     #this function is meant to print the unique words with their frequency so that some potential stopwords can be removed
-
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
-	
 	stopwords = {}
 	replace_words = {}
 	stopword_count = 0
@@ -81,7 +81,6 @@ def get_bodywords():
 			replace_words[a] = 1
 	
 	with open(replaceword_data) as infile:
-
 		for line in infile:
 			a = line.strip()
 			if a not in replace_words:
@@ -118,7 +117,6 @@ def get_idf():
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
-	
 	stopwords = {}
 	replace_words = {}
 	stopword_count = 0
@@ -188,7 +186,7 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
-def get_boolmatrix(input_size = 100000):
+def get_boolmatrix(input_size = 100000, select_transform = 1):
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
@@ -233,8 +231,11 @@ def get_boolmatrix(input_size = 100000):
 		corpus.append(processed_body.strip())
 
 	# return corpus
-	vectorizer = CountVectorizer(min_df=1)
-	a = vectorizer.fit_transform(corpus)
+	if(select_transform == 1):
+		transform = CountVectorizer(min_df=1)
+	elif(select_transform == 2):
+		transform = TfidfVectorizer(min_df=1)
+	a = transform.fit_transform(corpus)
 	b = a.toarray()
 	count = 0
 	x, y = b.shape
@@ -246,5 +247,7 @@ def get_boolmatrix(input_size = 100000):
 			print to_print
 			to_print = ""
 	# U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
+	print b.shape
 
-get_boolmatrix()
+get_boolmatrix(100, select_transform = 2)
+

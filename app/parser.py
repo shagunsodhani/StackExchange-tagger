@@ -31,6 +31,7 @@ stopword_data = "data/stopword.txt"
 replaceword_data = "data/replaceword.txt"
 
 def preprocess_dataset():
+    #preprocess the raw dataset we got online
 	count = 0
 	with open(test_data) as infile:
 		for line in infile:
@@ -43,8 +44,7 @@ def preprocess_dataset():
 	# print count
 
 def remove_stopwords():
-
-
+    #remove all the stopwords
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
@@ -72,7 +72,6 @@ def remove_stopwords():
 			replace_words[a] = 1
 	
 	with open(replaceword_data) as infile:
-
 		for line in infile:
 			a = line.strip()
 			if a not in replace_words:

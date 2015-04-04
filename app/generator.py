@@ -42,7 +42,6 @@ def generate_taglist(k):
 
 def generate_data(tag_count, question_count):
 	#generate data using top 'tag_count' number of tags and 'question_count' number of questions
-	
     db = mongo.connect()
     tags = generate_taglist(tag_count)
     count = 0
