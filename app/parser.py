@@ -129,9 +129,10 @@ def fetch_top_tags(k = 100):
 	tag_dict = {}
 	f = open("data/tag.txt", 'w')
 	for i in range(0, k):
-		f.write(sorted_tags[i][0])	 
+		f.write(sorted_tags[i][0])
+		f.write("\n")	 
 		tag_dict[sorted_tags[i][0]]=0
-	return tag_list
+	return tag_dict
 
 #preprocess_dataset()
 #remove_stopwords()
