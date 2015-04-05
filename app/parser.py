@@ -126,9 +126,13 @@ def fetch_top_tags(k = 100):
 					else:
 						tags[tag]+=1
 	sorted_tags = sorted(tags.items(), key=operator.itemgetter(1), reverse = True)
+	tag_dict = {}
+	f = open("data/tag.txt", 'w')
 	for i in range(0, k):
-		print sorted_tags[i][0]	 
+		f.write(sorted_tags[i][0])	 
+		tag_dict[sorted_tags[i][0]]=0
+	return tag_list
 
 #preprocess_dataset()
 #remove_stopwords()
-fetch_top_tags()
+# fetch_top_tags()
