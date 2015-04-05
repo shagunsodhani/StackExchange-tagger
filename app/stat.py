@@ -234,64 +234,75 @@ def get_trainmatrix(input_size = 100000, read_database = 1, to_print  = 0):
 	return train
 
 			
-def get_featurematrix(input_size = 100000):
+def get_featurematrix(input_size = 100000, read_database = 1, to_print = 0):
 
-	porter_stemmer = nltk.stem.porter.PorterStemmer()
-	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
-	nltk_stopwords = nltk.corpus.stopwords.words('english')
+	frame = "featurematrix.csv"
+	if read_database == 0:
+		t0 = time()
+		a = np.loadtxt(fname, delimiter = ",")
+		print("Loaded documents from File in %fs" % (time() - t0))
+		print "input_size = ", input_size
+		print a.size
+		b = a.reshape(input_size, a.size/input_size)
 	
-	take_words = {}
-	replace_words = {}
+	else:
+		porter_stemmer = nltk.stem.porter.PorterStemmer()
+		wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
+		nltk_stopwords = nltk.corpus.stopwords.words('english')
+		
+		take_words = {}
+		replace_words = {}
 
-	with open(takeword_data) as infile:
-		for line in infile:
-			i = line.strip().split()
-			for token in i:
-				if token not in take_words:
-					take_words[token] = 1
+		with open(takeword_data) as infile:
+			for line in infile:
+				i = line.strip().split()
+				for token in i:
+					if token not in take_words:
+						take_words[token] = 1
 
-	for a in string.punctuation:
-		if a not in replace_words:
-			replace_words[a] = 1
-	
-	with open(replaceword_data) as infile:
-		for line in infile:
-			a = line.strip()
+		for a in string.punctuation:
 			if a not in replace_words:
-				replace_words[a] = 1			
+				replace_words[a] = 1
+		
+		with open(replaceword_data) as infile:
+			for line in infile:
+				a = line.strip()
+				if a not in replace_words:
+					replace_words[a] = 1			
 
-	db = mongo.connect()
+		db = mongo.connect()
 
-	corpus = []
-	# count
-	for post in list(db.find().skip(1).limit(input_size)):
-		word = {}
-		body = post['body'].strip()
-		for i in replace_words:
-			body = body.replace(i, '')
-		list_token = nltk.word_tokenize(body)
-		processed_body = ""
-		for token in list_token:
-			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-			if processed_token in take_words:
-				if processed_token not in word:
-					processed_body=processed_token+" "
-					word[processed_token]=1
-		corpus.append(processed_body.strip())
+		corpus = []
+		# count
+		for post in list(db.find().skip(1).limit(input_size)):
+			word = {}
+			body = post['body'].strip()
+			for i in replace_words:
+				body = body.replace(i, '')
+			list_token = nltk.word_tokenize(body)
+			processed_body = ""
+			for token in list_token:
+				processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+				if processed_token in take_words:
+					if processed_token not in word:
+						processed_body=processed_token+" "
+						word[processed_token]=1
+			corpus.append(processed_body.strip())
 
-	vectorizer = CountVectorizer(min_df=1)
-	a = vectorizer.fit_transform(corpus)
-	b = a.toarray()
-	count = 0
-	x, y = b.shape
+		vectorizer = CountVectorizer(min_df=1)
+		a = vectorizer.fit_transform(corpus)
+		b = a.toarray()
+		np.savetxt(fname, b, delimiter=",")
 
-	for i in b:
-		to_print = ""
-		for j in i:
-			to_print+=str(j)+", "
-		to_print = to_print[:-2]
-		print to_print
-
+	if to_print == 1:
+		for i in b:
+			to_print = ""
+			for j in i:
+				to_print+=str(j)+", "
+				to_print = to_print[:-2]
+			print to_print
+	
+	return b
 
 def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1):
 	fname = "boolmatrix.csv"
