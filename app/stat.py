@@ -103,7 +103,7 @@ def get_bodywords():
 					word[processed_token]=1
 					# print processed_token
 				else:
-					word[processed_token]+=1
+					word[processed_token]=1
 	sorted_word = sorted(word.items(), key=operator.itemgetter(1), reverse = True)
 	#print sorted_word
 	for i in sorted_word:
@@ -168,10 +168,10 @@ def get_idf():
 					flag[processed_token] = 1
 					# print processed_token
 				else:
-					word[processed_token]+=1
+					word[processed_token]=1
 					if processed_token not in flag:
 						flag[processed_token] = 1
-						idf[processed_token]+=1
+						idf[processed_token]=1
 
 	for i in idf:
 		if idf[i] > 7:
@@ -199,30 +199,90 @@ def get_trainmatrix(input_size = 100000):
 		for i in post['tag']:
 			question_tag[question_count].append(i)
 			tag_set.add(i)
-		question_count+=1
+		question_count=1
 	sorted_taglist = sorted(tag_set)
 	tag_dict = {}
 	tag_count = 0
 	for i in sorted_taglist:
 		tag_dict[i] = tag_count
-		tag_count+=1
+		tag_count=1
 	train = np.zeros((input_size, tag_count), dtype = np.int)
 	for i in question_tag:
 		for j in question_tag[i]:
 			train[i][tag_dict[j]]=1
 		to_print = ""
 		for j in train[i]:
-			to_print+=str(j)+", "
+			to_print=str(j)", "
 		to_print = to_print[:-2]
 		print to_print
 			
+def get_featurematrix(input_size = 100000):
+
+	porter_stemmer = nltk.stem.porter.PorterStemmer()
+	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
+	nltk_stopwords = nltk.corpus.stopwords.words('english')
 	
+	take_words = {}
+	replace_words = {}
+
+	with open(takeword_data) as infile:
+		for line in infile:
+			i = line.strip().split()
+			for token in i:
+				if token not in take_words:
+					take_words[token] = 1
+
+	for a in string.punctuation:
+		if a not in replace_words:
+			replace_words[a] = 1
+	
+	with open(replaceword_data) as infile:
+		for line in infile:
+			a = line.strip()
+			if a not in replace_words:
+				replace_words[a] = 1			
+
+	db = mongo.connect()
+
+	corpus = []
+	# count
+	for post in list(db.find().skip(1).limit(input_size)):
+		word = {}
+		body = post['body'].strip()
+		for i in replace_words:
+			body = body.replace(i, '')
+		list_token = nltk.word_tokenize(body)
+		processed_body = ""
+		for token in list_token:
+			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+			if processed_token in take_words:
+				if processed_token not in word:
+					processed_body=processed_token" "
+					word[processed_token]=1
+		corpus.append(processed_body.strip())
+
+	vectorizer = CountVectorizer(min_df=1)
+	a = vectorizer.fit_transform(corpus)
+	b = a.toarray()
+	count = 0
+	x, y = b.shape
+
+	for i in b:
+		to_print = ""
+		for j in i:
+			to_print+=str(j)+", "
+		to_print = to_print[:-2]
+		print to_print
+
+
 def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1):
 	fname = "boolmatrix.csv"
 	if read_database == 0:
 		t0 = time()
 		a = np.loadtxt(fname, delimiter = ",")
 		print("Loaded documents from File in %fs" % (time() - t0))
+		print "input_size = ", input_size
+		print a.size
 		b = a.reshape(input_size, a.size/input_size)
 		return b
 
@@ -265,7 +325,7 @@ def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1)
 			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
 			if processed_token in take_words:
 				if processed_token not in word:
-					processed_body+=processed_token+" "
+					processed_body=processed_token" "
 					word[processed_token]=1
 		corpus.append(processed_body.strip())
 
@@ -283,6 +343,6 @@ def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1)
 
 
 if __name__ == "__main__":
-	get_trainmatrix(input_size = 10000)
-	#get_boolmatrix(5, select_transform = 2, read_database = 0)
+#	get_trainmatrix(input_size = 10000)
+	get_boolmatrix(5, select_transform = 2, read_database = 0)
 
