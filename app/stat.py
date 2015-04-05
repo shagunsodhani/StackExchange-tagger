@@ -28,7 +28,7 @@ except ImportError as exc:
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from time import time
 import numpy as np
 
 stopword_data = "data/stopword.txt"
@@ -104,7 +104,7 @@ def get_bodywords():
 				else:
 					word[processed_token]+=1
 	sorted_word = sorted(word.items(), key=operator.itemgetter(1), reverse = True)
-	print sorted_word
+	#print sorted_word
 	for i in sorted_word:
 		try:
 			print i[0], " : ",i[1] 
@@ -186,11 +186,19 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
-def get_boolmatrix(input_size = 100000, select_transform = 1):
+def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1):
+	fname = "boolmatrix.csv"
+	if read_database == 0:
+		t0 = time()
+		a = np.loadtxt(fname, delimiter = ",")
+		print("Loaded documents from File in %fs" % (time() - t0))
+		b = a.reshape(input_size, a.size/input_size)
+		return b
+
 	porter_stemmer = nltk.stem.porter.PorterStemmer()
 	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
 	nltk_stopwords = nltk.corpus.stopwords.words('english')
-	
+    	
 	take_words = {}
 	replace_words = {}
 
@@ -212,9 +220,9 @@ def get_boolmatrix(input_size = 100000, select_transform = 1):
 				replace_words[a] = 1			
 
 	db = mongo.connect()
-
 	corpus = []
-	# count
+	t0 = time()
+
 	for post in list(db.find().skip(1).limit(input_size)):
 		word = {}
 		body = post['body'].strip()
@@ -230,24 +238,19 @@ def get_boolmatrix(input_size = 100000, select_transform = 1):
 					word[processed_token]=1
 		corpus.append(processed_body.strip())
 
-	# return corpus
+	print("Loaded documents from MongoDB in %fs" % (time() - t0))
+
 	if(select_transform == 1):
 		transform = CountVectorizer(min_df=1)
 	elif(select_transform == 2):
 		transform = TfidfVectorizer(min_df=1)
 	a = transform.fit_transform(corpus)
+	#print transform.get_feature_names()
 	b = a.toarray()
-	count = 0
-	x, y = b.shape
-	to_print = ""
-	for c in np.nditer(b):
-		to_print+=str(c)+"," 
-		count+=1
-		if(count%y == 0):
-			print to_print
-			to_print = ""
-	# U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
-	print b.shape
+	np.savetxt(fname, b, delimiter=",")
+	return b
 
-get_boolmatrix(100, select_transform = 2)
+
+if __name__ == "__main__":
+	get_boolmatrix(5, select_transform = 2, read_database = 0)
 
