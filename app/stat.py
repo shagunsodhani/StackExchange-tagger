@@ -187,34 +187,52 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
-def get_trainmatrix(input_size = 100000):
-	db = mongo.connect()
-	corpus = []
-	t0 = time()
-	tag_set = Set()
-	question_tag = {}
-	question_count = 0
-	for post in list(db.find().skip(1).limit(input_size)):
-		question_tag[question_count] = []
-		for i in post['tag']:
-			question_tag[question_count].append(i)
-			tag_set.add(i)
-		question_count=1
-	sorted_taglist = sorted(tag_set)
-	tag_dict = {}
-	tag_count = 0
-	for i in sorted_taglist:
-		tag_dict[i] = tag_count
-		tag_count=1
-	train = np.zeros((input_size, tag_count), dtype = np.int)
-	for i in question_tag:
-		for j in question_tag[i]:
-			train[i][tag_dict[j]]=1
-		to_print = ""
-		for j in train[i]:
-			to_print=str(j)", "
-		to_print = to_print[:-2]
-		print to_print
+def get_trainmatrix(input_size = 100000, read_database = 1, to_print  = 0):
+
+	fname = "trainmatrix.csv"
+	if read_database == 0:
+		t0 = time()
+		a = np.loadtxt(fname, delimiter = ",")
+		print("Loaded documents from File in %fs" % (time() - t0))
+		print "input_size = ", input_size
+		print a.size
+		train = a.reshape(input_size, a.size/input_size)
+		
+	else:
+		db = mongo.connect()
+		corpus = []
+		t0 = time()
+		tag_set = Set()
+		question_tag = {}
+		question_count = 0
+		for post in list(db.find().skip(1).limit(input_size)):
+			question_tag[question_count] = []
+			for i in post['tag']:
+				question_tag[question_count].append(i)
+				tag_set.add(i)
+			question_count=1
+		sorted_taglist = sorted(tag_set)
+		tag_dict = {}
+		tag_count = 0
+		for i in sorted_taglist:
+			tag_dict[i] = tag_count
+			tag_count=1
+		train = np.zeros((input_size, tag_count), dtype = np.int)
+		for i in question_tag:
+			for j in question_tag[i]:
+				train[i][tag_dict[j]]=1
+		np.savetxt(fname, train, delimiter=",")
+
+	if to_print == 1:
+		for i in train:
+			to_print = ""
+			for j in i:
+				to_print+=str(j)+", "
+				to_print = to_print[:-2]
+			print to_print
+	
+	return train
+
 			
 def get_featurematrix(input_size = 100000):
 
@@ -257,7 +275,7 @@ def get_featurematrix(input_size = 100000):
 			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
 			if processed_token in take_words:
 				if processed_token not in word:
-					processed_body=processed_token" "
+					processed_body=processed_token+" "
 					word[processed_token]=1
 		corpus.append(processed_body.strip())
 
@@ -325,7 +343,7 @@ def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1)
 			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
 			if processed_token in take_words:
 				if processed_token not in word:
-					processed_body=processed_token" "
+					processed_body=processed_token+" "
 					word[processed_token]=1
 		corpus.append(processed_body.strip())
 
