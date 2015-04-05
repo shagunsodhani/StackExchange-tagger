@@ -30,6 +30,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from time import time
 import numpy as np
+from sets import Set
 
 stopword_data = "data/stopword.txt"
 replaceword_data = "data/replaceword.txt"
@@ -186,6 +187,36 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
+def get_trainmatrix(input_size = 100000):
+	db = mongo.connect()
+	corpus = []
+	t0 = time()
+	tag_set = Set()
+	question_tag = {}
+	question_count = 0
+	for post in list(db.find().skip(1).limit(input_size)):
+		question_tag[question_count] = []
+		for i in post['tag']:
+			question_tag[question_count].append(i)
+			tag_set.add(i)
+		question_count+=1
+	sorted_taglist = sorted(tag_set)
+	tag_dict = {}
+	tag_count = 0
+	for i in sorted_taglist:
+		tag_dict[i] = tag_count
+		tag_count+=1
+	train = np.zeros((input_size, tag_count), dtype = np.int)
+	for i in question_tag:
+		for j in question_tag[i]:
+			train[i][tag_dict[j]]=1
+		to_print = ""
+		for j in train[i]:
+			to_print+=str(j)+", "
+		to_print = to_print[:-2]
+		print to_print
+			
+	
 def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1):
 	fname = "boolmatrix.csv"
 	if read_database == 0:
@@ -252,5 +283,6 @@ def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1)
 
 
 if __name__ == "__main__":
-	get_boolmatrix(5, select_transform = 2, read_database = 0)
+	get_trainmatrix(input_size = 10000)
+	#get_boolmatrix(5, select_transform = 2, read_database = 0)
 
