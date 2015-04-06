@@ -1,9 +1,15 @@
 import sys
 import os
 import json
-import time
 import string
 import operator
+from time import time
+
+import numpy as np
+from sklearn import svm
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.multiclass import OneVsOneClassifier
+from sklearn.preprocessing import MultiLabelBinarizer
 
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -17,34 +23,10 @@ except ImportError as exc:
     print("Error: failed to import settings module ({})".format(exc))
 
 try:
-    import nltk
+	from app import stat
 except ImportError as exc:
     print("Error: failed to import settings module ({})".format(exc))
 
-try:
-	from bs4 import BeautifulSoup
-except ImportError as exc:
-	print("Error: failed to import settings module ({})".format(exc))
-
-try:
-	from sklearn.feature_extraction.text import TfidfVectorizer
-except ImportError as exc:
-	print("Error: failed to import settings module ({})".format(exc))
-
-from sklearn.feature_extraction.text import TfidfVectorizer	
-
-import numpy as np
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.multiclass import OneVsOneClassifier
-from sklearn.svm import LinearSVC
-from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.svm import SVC
-from app import stat
-from time import time
-
-test_data = "data/processed.csv"
-takeword_data = "data/take_word.txt"
-replaceword_data = "data/replaceword.txt"
 
 def accuracy_atleast_one_match(result, prediction):
 	length = len(result)
@@ -81,15 +63,12 @@ def get_featureVector(input_size = 100000, select_transform = 1, read_database =
 
 	to_print = 0
 	train = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
-	count = 0
-	# print b.shape
 	t0 = time()
 	U, s, V = np.linalg.svd(train, full_matrices=True)
 	print("SVD decomposition done in %fs" % (time() - t0))
 	square_sum_s = np.square(s).sum()
 	#not sure if this is the most optimal way for finding the sum of squares
 
-	# print "squared sum = "+str(square_sum_s)
 	temp_sum = 0
 	count = 0
 	for i in s:
@@ -97,27 +76,20 @@ def get_featureVector(input_size = 100000, select_transform = 1, read_database =
 		count+=1 
 		if(temp_sum >= 0.9*square_sum_s):
 			break;
-	# print count
-	# print s.shape
-	# print V.shape
+
 	processedV = np.transpose(np.delete(V, np.s_[count::1], 0))
 	#can use splicing instead of delete
-	print processedV.shape
-	train_data = np.dot(train, processedV)
-#	print b.shape
-#	print processedV.shape
-	print train_data.shape
-	
+	train_data = np.dot(train, processedV)	
 	train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
-	#print train_results
+	
 	mlb = MultiLabelBinarizer()
 	Y = mlb.fit_transform(train_results)
 	print type(Y)
 	#print train_results.shape
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
-	#clf = OneVsRestClassifier(LinearSVC(random_state=0, dual = False, max_iter =20000, verbose = 0))
+	clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =20000, verbose = 0))
 
-	clf = OneVsOneClassifier(LinearSVC(random_state=0, max_iter =20000, verbose = 0))
+	# clf = OneVsOneClassifier(LinearSVC(random_state=0, max_iter =20000, verbose = 0))
 	#clf = OneVsOneClassifier(SVC(random_state=0, verbose = 0))
 	prediction_Y  = clf.fit(train_data, Y).predict(train_data)
 
