@@ -34,62 +34,57 @@ except ImportError as exc:
 from sklearn.feature_extraction.text import TfidfVectorizer	
 
 import numpy as np
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.svm import LinearSVC
+from sklearn.preprocessing import MultiLabelBinarizer
+
+from app import stat
+from time import time
 
 test_data = "data/processed.csv"
 takeword_data = "data/take_word.txt"
 replaceword_data = "data/replaceword.txt"
 
-def get_featureVector(input_size = 10000):
-    #this function is meant to print the unique words with their frequency so that some potential stopwords can be removed
 
-	porter_stemmer = nltk.stem.porter.PorterStemmer()
-	wordnet_lemmatizer = nltk.stem.WordNetLemmatizer()
-	nltk_stopwords = nltk.corpus.stopwords.words('english')
+def get_featureVector(input_size = 100000, select_transform = 1, read_database = 1):
+
+	to_print = 0
+	train = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
+	count = 0
+	# print b.shape
+	t0 = time()
+	U, s, V = np.linalg.svd(train, full_matrices=True)
+	print("SVD decomposition done in %fs" % (time() - t0))
+	square_sum_s = np.square(s).sum()
+	#not sure if this is the most optimal way for finding the sum of squares
+
+	# print "squared sum = "+str(square_sum_s)
+	temp_sum = 0
+	count = 0
+	for i in s:
+		temp_sum+= i*i
+		count+=1 
+		if(temp_sum >= 0.9*square_sum_s):
+			break;
+	# print count
+	# print s.shape
+	# print V.shape
+	processedV = np.transpose(np.delete(V, np.s_[count::1], 0))
+	#can use splicing instead of delete
+	print processedV.shape
+	train_data = np.dot(train, processedV)
+#	print b.shape
+#	print processedV.shape
+	print train_data.shape
 	
-	take_words = {}
-	replace_words = {}
+	train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
 
-	with open(takeword_data) as infile:
-		for line in infile:
-			i = line.strip().split()
-			for token in i:
-				if token not in take_words:
-					take_words[token] = 1
+	mlb = MultiLabelBinarizer()
+	Y = mlb.fit_transform(train_results)
+	#print train_results.shape
+	print OneVsRestClassifier(LinearSVC(random_state=0)).fit(train_data, Y).predict(train_data)
+#	print s
+#	print V
 
-	for a in string.punctuation:
-		if a not in replace_words:
-			replace_words[a] = 1
-	
-	with open(replaceword_data) as infile:
-		for line in infile:
-			a = line.strip()
-			if a not in replace_words:
-				replace_words[a] = 1			
-
-	db = mongo.connect()
-
-	corpus = []
-	# count
-	for post in list(db.find().skip(1).limit(input_size)):
-		word = {}
-		body = post['body'].strip()
-		for i in replace_words:
-			body = body.replace(i, '')
-		list_token = nltk.word_tokenize(body)
-		processed_body = ""
-		for token in list_token:
-			processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-			if processed_token in take_words:
-				if processed_token not in word:
-					processed_body+=processed_token+" "
-					word[processed_token]=1
-		corpus.append(processed_body.strip())
-
-	return corpus
-	vectorizer = TfidfVectorizer(min_df=1)
-	a = vectorizer.fit_transform(corpus)
-	U, s, V = np.linalg.svd(a.toarray(), full_matrices=True)
-	
-
-
-# get_featureVector(input_size = 100)
+if __name__ == "__main__":
+	get_featureVector(200, select_transform = 2, read_database = 0)
