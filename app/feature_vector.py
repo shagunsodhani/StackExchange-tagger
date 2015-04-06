@@ -59,7 +59,7 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def predict(input_size = 100000, select_transform = 1, read_database = 1):
+def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0):
 
 	to_print = 0
 	train = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
@@ -79,34 +79,34 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1):
 
 	processedV = np.transpose(np.delete(V, np.s_[count::1], 0))
 	#can use splicing instead of delete
-	train_data = np.dot(train, processedV)	
+	X = np.dot(train, processedV)	
 	train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
 	
 	mlb = MultiLabelBinarizer()
 	Y = mlb.fit_transform(train_results)
-	print type(Y)
-	#print train_results.shape
+
+	if(one_vs_one == 1):
+		clf = OneVsOneClassifier(svm.LinearSVC(random_state=0, max_iter =20000, verbose = 0))
+	else:
+		clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =20000, verbose = 0))	
+
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
-	clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =20000, verbose = 0))
-
-	# clf = OneVsOneClassifier(LinearSVC(random_state=0, max_iter =20000, verbose = 0))
-	#clf = OneVsOneClassifier(SVC(random_state=0, verbose = 0))
-	prediction_Y  = clf.fit(train_data, Y).predict(train_data)
-
-#	predict_Y
-
 	#class sklearn.svm.SVC(C=1.0, kernel='rbf', degree=3, gamma=0.0, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, random_state=None)
-	#prediction_Y = OneVsRestClassifier(SVC(random_state=0, verbose = 0)).fit(train_data, Y).predict(train_data)
+
+	prediction_Y  = clf.fit(X, Y).predict(X)
+
+		#prediction_Y = OneVsRestClassifier(SVC(random_state=0, verbose = 0)).fit(train_data, Y).predict(train_data)
 	#print type(prediction_Y)
+	
 	prediction = mlb.inverse_transform(prediction_Y)
 	for i in prediction:
 		print i
 	print "\n"
 	for i in train_results:
 		print i
-	print clf.decision_function(train_data)
+	print clf.decision_function(X)
 	print Y
 
 
 if __name__ == "__main__":
-	predict(10, select_transform = 2, read_database = 1)
+	predict(10, select_transform = 2, read_database = 1, one_vs_one = 0)
