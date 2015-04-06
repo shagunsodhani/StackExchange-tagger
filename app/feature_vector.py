@@ -59,7 +59,7 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def get_featureVector(input_size = 100000, select_transform = 1, read_database = 1):
+def predict(input_size = 100000, select_transform = 1, read_database = 1):
 
 	to_print = 0
 	train = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
@@ -109,4 +109,4 @@ def get_featureVector(input_size = 100000, select_transform = 1, read_database =
 
 
 if __name__ == "__main__":
-	get_featureVector(10, select_transform = 2, read_database = 1)
+	predict(10, select_transform = 2, read_database = 1)
