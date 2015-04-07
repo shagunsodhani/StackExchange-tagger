@@ -27,10 +27,16 @@ try:
 except ImportError as exc:
     print("Error: failed to import settings module ({})".format(exc))
 
+try:
+	from app import evaluate
+except ImportError as exc:
+    print("Error: failed to import settings module ({})".format(exc))
 
 def accuracy_atleast_one_match(result, prediction):
 	length = len(result)
 	#print length
+	# print result
+	# print prediction
 	count = 0.0
 	for i in range(0, length):
 		flag = 0
@@ -38,6 +44,8 @@ def accuracy_atleast_one_match(result, prediction):
 			if j in result[i]:
 				flag = 1
 		count+=flag
+		# print "Result : "+str(result[i])
+		# print "Prediction : "+str(prediction[i]) 
 	print "Accuracy = "+str(count/length)
 
 def accuracy_null_results(result, prediction):
@@ -62,9 +70,9 @@ def input_representation(result):
 def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0):
 
 	to_print = 0
-	train = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
+	raw_train_data = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
 	t0 = time()
-	U, s, V = np.linalg.svd(train, full_matrices=True)
+	U, s, V = np.linalg.svd(raw_train_data, full_matrices=True)
 	print("SVD decomposition done in %fs" % (time() - t0))
 	square_sum_s = np.square(s).sum()
 	#not sure if this is the most optimal way for finding the sum of squares
@@ -77,36 +85,103 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 		if(temp_sum >= 0.9*square_sum_s):
 			break;
 
-	processedV = np.transpose(np.delete(V, np.s_[count::1], 0))
+	print "count = "+str(count)
+	x = np.delete(V, np.s_[count::1], 0)
+	processedV = np.transpose(x)
+	X = np.dot(raw_train_data, processedV)
+	
+	# print "count = "+str(count)
+	# print "V.shape = "+str(V.shape)
+	# print "s.shape = "+str(s.shape)
+	# x = np.delete(V, np.s_[count::1], 0)
+	# print "x.shape = "+str(x.shape)
+	# print "raw_train_data.shape = "+str(raw_train_data)
+	# print "processedV.shape = "+str(processedV.shape)
+
 	#can use splicing instead of delete
-	X = np.dot(train, processedV)	
+	
+	# print "X.shape = "+str(X.shape)	
+
 	train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
 	
 	mlb = MultiLabelBinarizer()
 	Y = mlb.fit_transform(train_results)
 
+	# print Y.shape
+
 	if(one_vs_one == 1):
 		clf = OneVsOneClassifier(svm.LinearSVC(random_state=0, max_iter =20000, verbose = 0))
 	else:
-		clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =20000, verbose = 0))	
+		clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =10000, verbose = 0))	
 
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
 	#class sklearn.svm.SVC(C=1.0, kernel='rbf', degree=3, gamma=0.0, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, random_state=None)
 
-	prediction_Y  = clf.fit(X, Y).predict(X)
+	# prediction_Y  = clf.fit(X, Y).predict(X)
 
-		#prediction_Y = OneVsRestClassifier(SVC(random_state=0, verbose = 0)).fit(train_data, Y).predict(train_data)
-	#print type(prediction_Y)
+	scores = clf.fit(X, Y).decision_function(X)
+	# print len(scores.shape)
+	indices = scores.argmax(axis = 1)
+
+	# if(len(scores.shape) == 1):
+	# 	indices = (scores > 0).astype(np.int)
+	# else:
+	# 	indices = scores.argmax(axis = 1)
+	# print indices
+	# print type(clf.classes_[indices])
+	# prediction_Y = clf.classes_[indices]
+
+	# print prediction_Y
+
+	# print indices.shape
+	# print type(indices.shape)
+
+	prediction_Y  = np.zeros(Y.shape)
+
+	print prediction_Y.shape
+	for i in range(0, len(indices)):
+		prediction_Y[i][indices[i]] = 1
+	# print type(prediction_Y)
+	# print prediction_Y
+
+	# def shagun_predict()
+	#     def predict(self, X):
+ #        """Predict class labels for samples in X.
+ #        Parameters
+ #        ----------
+ #        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+ #            Samples.
+ #        Returns
+ #        -------
+ #        C : array, shape = [n_samples]
+ #            Predicted class label per sample.
+ #        """
+ #        scores = self.decision_function(X)
+ #        if len(scores.shape) == 1:
+ #            indices = (scores > 0).astype(np.int)
+ #        else:
+ #            indices = scores.argmax(axis=1)
+ #        return self.classes_[indices]
+
+
+	# # prediction_Y = OneVsRestClassifier(SVC(random_state=0, verbose = 0)).fit(train_data, Y).predict(train_data)
+	# # print type(prediction_Y)
 	
 	prediction = mlb.inverse_transform(prediction_Y)
-	for i in prediction:
-		print i
-	print "\n"
-	for i in train_results:
-		print i
-	print clf.decision_function(X)
-	print Y
+	# for i in prediction:
+	# 	print i
+	# print "\n"
+	# for i in train_results:
+	# 	print i
+	# print clf.decision_function(X)
+	# # # print Y
+	# print Y
+	# print prediction_Y
+	evaluate.accuracy_atleast_one_match(train_results, prediction)
+	evaluate.accuracy_null_results(prediction)
+	evaluate.accuracy_exact_match(train_results, prediction)
+	print raw_train_data.shape
 
 
 if __name__ == "__main__":
-	predict(10, select_transform = 2, read_database = 1, one_vs_one = 0)
+	predict(3000, select_transform = 2, read_database = 1, one_vs_one = 0)
