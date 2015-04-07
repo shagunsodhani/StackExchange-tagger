@@ -30,7 +30,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from time import time
 import numpy as np
-from sets import Set
+import pickle
 
 stopword_data = "data/stopword.txt"
 replaceword_data = "data/replaceword.txt"
@@ -51,8 +51,6 @@ def get_codewords():
 					pass
 				code_word[i] = 1
 		print "\n"
-
-#get_codewords()
 
 def get_bodywords():
     #this function is meant to print the unique words with their frequency so that some potential stopwords can be removed
@@ -189,24 +187,28 @@ def get_idf():
 
 def get_trainmatrix(input_size = 100000, read_database = 1, to_print  = 0):
 
-	fname = "trainmatrix.csv"
+	fname_matlab = "trainmatrix.csv"
+	fname_python = "trainmatrix"
+
 	if read_database == 0:
 		t0 = time()
-		a = np.loadtxt(fname, delimiter = ",")
 		print("Loaded documents from File in %fs" % (time() - t0))
-		print "input_size = ", input_size
-		print a.size
-		train = a.reshape(input_size, a.size/input_size)
-		
+		#print "input_size = ", input_size
+		#print a.size
+		with open(fname_python, 'rb') as f:
+			    question_tag_list = pickle.load(f)
+		#train = a.reshape(input_size, a.size/input_size)
 	else:
 		db = mongo.connect()
 		corpus = []
 		t0 = time()
-		tag_set = Set()
+		tag_set = set()
 		question_tag = {}
 		question_count = 0
+		question_tag_list = []
 		for post in list(db.find().skip(1).limit(input_size)):
 			question_tag[question_count] = []
+			question_tag_list.append(post['tag'])
 			for i in post['tag']:
 				question_tag[question_count].append(i)
 				tag_set.add(i)
@@ -214,29 +216,35 @@ def get_trainmatrix(input_size = 100000, read_database = 1, to_print  = 0):
 		sorted_taglist = sorted(tag_set)
 		tag_dict = {}
 		tag_count = 0
+		# print "size of set"
+		# print len(tag_set)
 		for i in sorted_taglist:
+			# print i
 			tag_dict[i] = tag_count
-			tag_count=1
+			tag_count+=1
+		# print "number of unique tags = "+str(tag_count)
 		train = np.zeros((input_size, tag_count), dtype = np.int)
 		for i in question_tag:
 			for j in question_tag[i]:
 				train[i][tag_dict[j]]=1
-		np.savetxt(fname, train, delimiter=",")
+		with open(fname_python, 'wb') as f:
+			    pickle.dump(question_tag_list, f)
 
 	if to_print == 1:
-		for i in train:
-			to_print = ""
-			for j in i:
-				to_print+=str(j)+", "
-				to_print = to_print[:-2]
-			print to_print
+		with open(fname_matlab, "w") as f:
+			for i in train:
+				to_print = ""
+				for j in i:
+					to_print+=str(j)+", "
+					to_print = to_print[:-2]
+				f.write(to_print)
+				f.write("\n")
 	
-	return train
+	return question_tag_list
+		
+def get_featurematrix(input_size = 100000, select_transform = 1, read_database = 1, to_print = 0):
 
-			
-def get_featurematrix(input_size = 100000, read_database = 1, to_print = 0):
-
-	frame = "featurematrix.csv"
+	fname = "featurematrix.csv"
 	if read_database == 0:
 		t0 = time()
 		a = np.loadtxt(fname, delimiter = ",")
@@ -252,13 +260,16 @@ def get_featurematrix(input_size = 100000, read_database = 1, to_print = 0):
 		
 		take_words = {}
 		replace_words = {}
+		stopwords = {}
 
-		with open(takeword_data) as infile:
+		with open(stopword_data) as infile:
 			for line in infile:
 				i = line.strip().split()
 				for token in i:
-					if token not in take_words:
-						take_words[token] = 1
+					a = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token))
+					if a not in stopwords:
+						stopwords[a] = 1
+
 
 		for a in string.punctuation:
 			if a not in replace_words:
@@ -283,14 +294,25 @@ def get_featurematrix(input_size = 100000, read_database = 1, to_print = 0):
 			processed_body = ""
 			for token in list_token:
 				processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-				if processed_token in take_words:
-					if processed_token not in word:
-						processed_body=processed_token+" "
-						word[processed_token]=1
+				# print processed_token
+				if processed_token not in stopwords and not (processed_token.isdigit()):
+					processed_body+=processed_token+" "
+					# print processed_token
+						# word[processed_token]=1
 			corpus.append(processed_body.strip())
+			# print list_token
+			# print 
+			# print processed_body.strip()
+		# print len(corpus)
+		# print corpus
 
-		vectorizer = CountVectorizer(min_df=1)
-		a = vectorizer.fit_transform(corpus)
+
+		if(select_transform == 1):
+			transform = CountVectorizer(min_df=1)
+		elif(select_transform == 2):
+			transform = TfidfVectorizer(min_df=1)
+		a = transform.fit_transform(corpus)
+		# print transform.get_feature_names()
 		b = a.toarray()
 		np.savetxt(fname, b, delimiter=",")
 
@@ -370,8 +392,8 @@ def get_boolmatrix(input_size = 100000, select_transform = 1, read_database = 1)
 	np.savetxt(fname, b, delimiter=",")
 	return b
 
-
 if __name__ == "__main__":
 #	get_trainmatrix(input_size = 10000)
-	get_boolmatrix(5, select_transform = 2, read_database = 0)
+	get_featurematrix(200, select_transform = 2, read_database = 1)
+	get_trainmatrix(200, read_database = 1)
 
