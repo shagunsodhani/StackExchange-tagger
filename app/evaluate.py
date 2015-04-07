@@ -57,8 +57,7 @@ def accuracy_exact_match(actual, prediction, verbose = 1):
 		print "Accuracy for exact matching = "+str(count/length)
 	return count/length
 
-
-def hamming_loss(actual, prediction, verbose = 1):
+def hamming_loss_multilabel(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
 		prediction - list of predicted results
@@ -85,7 +84,7 @@ def hamming_loss(actual, prediction, verbose = 1):
 	return hamming_loss
 
 
-def accuracy(actual, prediction, verbose = 1):
+def accuracy_multilabel(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
 		prediction - list of predicted results
@@ -112,7 +111,7 @@ def accuracy(actual, prediction, verbose = 1):
 	return accuracy
 
 
-def precision(actual, prediction, verbose = 1):
+def precision_multilabel(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
 		prediction - list of predicted results
@@ -138,7 +137,7 @@ def precision(actual, prediction, verbose = 1):
 		print "Precision (Godbole & Sarawagi) = "+str(precision)
 	return precision
 
-def recall(actual, prediction, verbose = 1):
+def recall_multilabel(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
 		prediction - list of predicted results
