@@ -58,6 +58,33 @@ def accuracy_exact_match(actual, prediction, verbose = 1):
 	return count/length
 
 
+def hamming_loss(actual, prediction, verbose = 1):
+	'''
+		actual - list of actual results
+		prediction - list of predicted results
+		defination taken from http://lpis.csd.auth.gr/publications/tsoumakas-ijdwm.pdf
+	'''
+
+	length = len(actual)
+	hamming_loss = 0.0
+	for i in range(0, length):
+		yi = set()
+		zi = set()
+
+		for j in actual[i]:
+			yi.add(j)
+
+		for j in prediction[i]:
+			zi.add(j)
+
+		hamming_loss+=(len(yi.symmetric_difference(zi))+0.0)/len(zi)
+
+	hamming_loss = hamming_loss/length
+	if (verbose):
+		print "Hamming Loss = "+str(hamming_loss)
+	return hamming_loss
+
+
 def accuracy(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
@@ -105,7 +132,7 @@ def precision(actual, prediction, verbose = 1):
 			zi.add(j)
 
 		precision+=(len(yi.intersection(zi))+0.0)/len(zi)
-
+		# print zi
 	precision = precision/length
 	if (verbose):
 		print "Precision (Godbole & Sarawagi) = "+str(precision)

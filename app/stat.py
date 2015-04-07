@@ -250,6 +250,7 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 		tag_set = set()
 		question_tag = {}
 		question_count = 0
+		# counter = 0
 		trainingdata_result = []
 
 		if mode == "multilabel":
@@ -258,11 +259,6 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 				question_tag[question_count] = []
 
 				trainingdata_result.append(post['tag'])
-
-				for i in post['tag']:
-					question_tag[question_count].append(i)
-					tag_set.add(i)
-				question_count+=1
 
 				body = post['body'].strip()
 				for i in replace_words:
@@ -274,6 +270,11 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 					if processed_token not in stopwords and not (processed_token.isdigit()):
 						processed_body+=processed_token+" "
 				corpus.append(processed_body.strip())
+
+				for i in post['tag']:
+					question_tag[question_count].append(i)
+					tag_set.add(i)
+				question_count+=1
 
 			#entire point of writing to csv is to use the data with matlab
 			sorted_taglist = sorted(tag_set)
@@ -303,7 +304,60 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 			# print trainingdata_features
 			np.savetxt(fname_feature, trainingdata_features, delimiter=",")
 
-	
+		elif mode == "multiclass":
+			if repeat == 0:
+				for post in list(db.find().skip(1).limit(input_size)):
+
+					body = post['body'].strip()
+					for i in replace_words:
+						body = body.replace(i, '')
+					list_token = nltk.word_tokenize(body)
+					processed_body = ""
+					for token in list_token:
+						processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+						if processed_token not in stopwords and not (processed_token.isdigit()):
+							processed_body+=processed_token+" "
+					
+					for i in post['tag']:
+						question_tag[question_count] = list(i)
+						tag_set.add(i)
+						question_count+=1
+						corpus.append(processed_body.strip())
+						trainingdata_result.append(i)
+						if(question_count == input_size):
+							break
+
+
+
+				#entire point of writing to csv is to use the data with matlab
+				sorted_taglist = sorted(tag_set)
+				tag_dict = {}
+				tag_count = 0
+				# print "size of set"
+				# print len(tag_set)
+				for i in sorted_taglist:
+					# print i
+					tag_dict[i] = tag_count
+					tag_count+=1
+				# print "number of unique tags = "+str(tag_count)
+				train_matrix = np.zeros((input_size, tag_count), dtype = np.int)
+				for i in question_tag:
+					for j in question_tag[i]:
+						train_matrix[i][tag_dict[j]]=1
+				with open(fname_result_pickle, 'wb') as f:
+					pickle.dump(trainingdata_result, f)
+
+				if(select_transform == 1):
+					transform = CountVectorizer(min_df=1)
+				elif(select_transform == 2):
+					transform = TfidfVectorizer(min_df=1)
+				a = transform.fit_transform(corpus)
+				# print transform.get_feature_names()
+				trainingdata_features = a.toarray()
+				# print trainingdata_features
+				np.savetxt(fname_feature, trainingdata_features, delimiter=",")
+
+
 		if to_print == 1:
 			for i in trainingdata_features:
 				to_print = ""
