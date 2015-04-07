@@ -185,7 +185,7 @@ def get_idf():
 	# 	except UnicodeEncodeError as e:
 	# 		print "Unicode Error : ", i[1]
 
-def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 1, to_print = 0, mode = "multiclass", repeat = 0):
+def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 1, to_print = 0, mode = "multiclass", repeat = 0, max_number_of_tags = 5):
 	'''
 		generate training data
 		if read_database == 0:
@@ -255,26 +255,33 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 
 		if mode == "multilabel":
 
-			for post in list(db.find().skip(1).limit(input_size)):
-				question_tag[question_count] = []
+			for post in list(db.find().skip(1).limit(input_size*(max_number_of_tags+1 ))):
 
-				trainingdata_result.append(post['tag'])
+				#not fool proof
+				if(len(post['tag']) <= max_number_of_tags):
+					question_tag[question_count] = []
 
-				body = post['body'].strip()
-				for i in replace_words:
-					body = body.replace(i, '')
-				list_token = nltk.word_tokenize(body)
-				processed_body = ""
-				for token in list_token:
-					processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-					if processed_token not in stopwords and not (processed_token.isdigit()):
-						processed_body+=processed_token+" "
-				corpus.append(processed_body.strip())
+					trainingdata_result.append(post['tag'])
 
-				for i in post['tag']:
-					question_tag[question_count].append(i)
-					tag_set.add(i)
-				question_count+=1
+					body = post['body'].strip()
+					for i in replace_words:
+						body = body.replace(i, '')
+					list_token = nltk.word_tokenize(body)
+					processed_body = ""
+					for token in list_token:
+						processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+						if processed_token not in stopwords and not (processed_token.isdigit()):
+							processed_body+=processed_token+" "
+					corpus.append(processed_body.strip())
+
+					for i in post['tag']:
+						question_tag[question_count].append(i)
+						tag_set.add(i)
+					question_count+=1
+
+				if(question_count>=input_size):
+					break
+
 
 			#entire point of writing to csv is to use the data with matlab
 			sorted_taglist = sorted(tag_set)
@@ -306,29 +313,38 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 
 		elif mode == "multiclass":
 			if repeat == 0:
-				for post in list(db.find().skip(1).limit(input_size)):
+				for post in list(db.find().skip(1).limit(input_size*(max_number_of_tags+1))):
+					#not fool proof
 
-					body = post['body'].strip()
-					for i in replace_words:
-						body = body.replace(i, '')
-					list_token = nltk.word_tokenize(body)
-					processed_body = ""
-					for token in list_token:
-						processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
-						if processed_token not in stopwords and not (processed_token.isdigit()):
-							processed_body+=processed_token+" "
-					
-					for i in post['tag']:
-						question_tag[question_count] = list(i)
-						tag_set.add(i)
-						question_count+=1
-						corpus.append(processed_body.strip())
-						trainingdata_result.append(i)
-						if(question_count == input_size):
-							break
+					if(len(post['tag']) <= max_number_of_tags):
+						# print len(post['tag'])
+						body = post['body'].strip()
+						for i in replace_words:
+							body = body.replace(i, '')
+						list_token = nltk.word_tokenize(body)
+						processed_body = ""
+						for token in list_token:
+							processed_token = wordnet_lemmatizer.lemmatize(porter_stemmer.stem(token.strip().lower()))
+							if processed_token not in stopwords and not (processed_token.isdigit()):
+								processed_body+=processed_token+" "
+						
+						for i in post['tag']:
+							# print i
+							question_tag[question_count] = []
+							question_tag[question_count].append(i)
+							#can be done in a single step - then do nit
+							tag_set.add(i)
+							question_count+=1
+							corpus.append(processed_body.strip())
+							trainingdata_result.append([i])
+							if(question_count >= input_size):
+								break
 
+					if(question_count >= input_size):
+						break
 
-
+				# print corpus
+				# print 
 				#entire point of writing to csv is to use the data with matlab
 				sorted_taglist = sorted(tag_set)
 				tag_dict = {}
