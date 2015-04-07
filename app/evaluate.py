@@ -1,7 +1,7 @@
 def accuracy_atleast_one_match(actual, prediction, verbose = 1):
 	'''
-		actual - list of actual null_results
-		prediction - list of predicted null_results
+		actual - list of actual results
+		prediction - list of predicted results
 	'''
 
 	length = len(actual)
@@ -21,8 +21,8 @@ def accuracy_atleast_one_match(actual, prediction, verbose = 1):
 
 def accuracy_null_results(prediction, verbose = 1):
 	''' 
-		actual - list of actual null_results
-		prediction - list of predicted null_results
+		actual - list of actual results
+		prediction - list of predicted results
 	'''
 	length = len(prediction)
 	count = 0.0
@@ -35,8 +35,8 @@ def accuracy_null_results(prediction, verbose = 1):
 
 def accuracy_exact_match(actual, prediction, verbose = 1):
 	'''
-		actual - list of actual null_results
-		prediction - list of predicted null_results
+		actual - list of actual results
+		prediction - list of predicted results
 	'''
 
 	length = len(actual)
@@ -56,3 +56,28 @@ def accuracy_exact_match(actual, prediction, verbose = 1):
 	if(verbose): 
 		print "Accuracy for exact matching = "+str(count/length)
 	return count/length
+
+def accuracy(actual, prediction, verbose = 1):
+	'''
+		actual - list of actual results
+		prediction - list of predicted results
+	'''
+
+	length = len(actual)
+	accuracy = 0.0
+	for i in range(0, length):
+		yi = set()
+		zi = set()
+
+		for j in actual[i]:
+			yi.add(j)
+
+		for j in prediction[i]:
+			zi.add(j)
+
+		accuracy+=(len(yi.intersection(zi))+0.0)/len(yi.union(zi))
+
+	accuracy = accuracy/length
+	if (verbose):
+		print "Accuracy (Godbole & Sarawagi) = "+str(accuracy)
+	return accuracy
