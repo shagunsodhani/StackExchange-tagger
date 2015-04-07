@@ -57,10 +57,12 @@ def accuracy_exact_match(actual, prediction, verbose = 1):
 		print "Accuracy for exact matching = "+str(count/length)
 	return count/length
 
+
 def accuracy(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
 		prediction - list of predicted results
+		defination taken from http://lpis.csd.auth.gr/publications/tsoumakas-ijdwm.pdf
 	'''
 
 	length = len(actual)
@@ -81,3 +83,56 @@ def accuracy(actual, prediction, verbose = 1):
 	if (verbose):
 		print "Accuracy (Godbole & Sarawagi) = "+str(accuracy)
 	return accuracy
+
+
+def precision(actual, prediction, verbose = 1):
+	'''
+		actual - list of actual results
+		prediction - list of predicted results
+		defination taken from http://lpis.csd.auth.gr/publications/tsoumakas-ijdwm.pdf
+	'''
+
+	length = len(actual)
+	precision = 0.0
+	for i in range(0, length):
+		yi = set()
+		zi = set()
+
+		for j in actual[i]:
+			yi.add(j)
+
+		for j in prediction[i]:
+			zi.add(j)
+
+		precision+=(len(yi.intersection(zi))+0.0)/len(zi)
+
+	precision = precision/length
+	if (verbose):
+		print "Precision (Godbole & Sarawagi) = "+str(precision)
+	return precision
+
+def recall(actual, prediction, verbose = 1):
+	'''
+		actual - list of actual results
+		prediction - list of predicted results
+		defination taken from http://lpis.csd.auth.gr/publications/tsoumakas-ijdwm.pdf
+	'''
+
+	length = len(actual)
+	recall = 0.0
+	for i in range(0, length):
+		yi = set()
+		zi = set()
+
+		for j in actual[i]:
+			yi.add(j)
+
+		for j in prediction[i]:
+			zi.add(j)
+
+		recall+=(len(yi.intersection(zi))+0.0)/len(yi)
+
+	recall = recall/length
+	if (verbose):
+		print "Recall (Godbole & Sarawagi) = "+str(recall)
+	return recall
