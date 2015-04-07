@@ -32,30 +32,6 @@ try:
 except ImportError as exc:
     print("Error: failed to import settings module ({})".format(exc))
 
-def accuracy_atleast_one_match(result, prediction):
-	length = len(result)
-	#print length
-	# print result
-	# print prediction
-	count = 0.0
-	for i in range(0, length):
-		flag = 0
-		for j in prediction[i]:
-			if j in result[i]:
-				flag = 1
-		count+=flag
-		# print "Result : "+str(result[i])
-		# print "Prediction : "+str(prediction[i]) 
-	print "Accuracy = "+str(count/length)
-
-def accuracy_null_results(result, prediction):
-	length = len(result)
-	count = 0.0
-	for i in range(0, length):
-		if not prediction[i]:
-			count+=1
-	print "null_results = "+str(count/length)
-
 def input_representation(result):
 	tag_count = {}
 	for i in result:
@@ -67,7 +43,7 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0):
+def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC"):
 
 	to_print = 0
 	raw_train_data = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
@@ -110,18 +86,31 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	# print Y.shape
 
 	if(one_vs_one == 1):
-		clf = OneVsOneClassifier(svm.LinearSVC(random_state=0, max_iter =20000, verbose = 0))
+		clf = OneVsOneClassifier(svm.LinearSVC(random_state=0, max_iter =10000, verbose = 0))
+		prediction_Y  = clf.fit(X, Y).predict(X)
 	else:
-		clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =10000, verbose = 0))	
+		if model == "LinearSVC":
+			print "Showing Results for one vs rest multilable classifier using LinearSVC model"
+			clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =10000, verbose = 0))
+			
+		elif model == "SVC":
+			print "Showing Results for one vs rest multilable classifier using SVC model"
+			clf = OneVsRestClassifier(svm.SVC(verbose = 0))
+		scores = clf.fit(X, Y).decision_function(X)
+			# print len(scores.shape)
+		indices = scores.argmax(axis = 1)
+		prediction_Y  = np.zeros(Y.shape)
+			# print prediction_Y.shape
+		for i in range(0, len(indices)):
+			prediction_Y[i][indices[i]] = 1	
+		
 
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
 	#class sklearn.svm.SVC(C=1.0, kernel='rbf', degree=3, gamma=0.0, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, random_state=None)
 
-	# prediction_Y  = clf.fit(X, Y).predict(X)
+	# 
 
-	scores = clf.fit(X, Y).decision_function(X)
-	# print len(scores.shape)
-	indices = scores.argmax(axis = 1)
+	
 
 	# if(len(scores.shape) == 1):
 	# 	indices = (scores > 0).astype(np.int)
@@ -136,11 +125,7 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	# print indices.shape
 	# print type(indices.shape)
 
-	prediction_Y  = np.zeros(Y.shape)
-
-	print prediction_Y.shape
-	for i in range(0, len(indices)):
-		prediction_Y[i][indices[i]] = 1
+	
 	# print type(prediction_Y)
 	# print prediction_Y
 
@@ -168,20 +153,26 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	# # print type(prediction_Y)
 	
 	prediction = mlb.inverse_transform(prediction_Y)
+	# # print prediction
 	# for i in prediction:
 	# 	print i
 	# print "\n"
 	# for i in train_results:
 	# 	print i
 	# print clf.decision_function(X)
-	# # # print Y
+	# # # # print Y
 	# print Y
 	# print prediction_Y
 	evaluate.accuracy_atleast_one_match(train_results, prediction)
 	evaluate.accuracy_null_results(prediction)
 	evaluate.accuracy_exact_match(train_results, prediction)
+	evaluate.accuracy(train_results, prediction)
+	evaluate.precision(train_results, prediction)
+	evaluate.recall(train_results, prediction)
 	print raw_train_data.shape
+	# print train_results
+	# print prediction
 
 
 if __name__ == "__main__":
-	predict(3000, select_transform = 2, read_database = 1, one_vs_one = 0)
+	predict(1000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "SVC")
