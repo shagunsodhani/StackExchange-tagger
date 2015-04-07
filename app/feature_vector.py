@@ -43,12 +43,28 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC"):
+def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode = "multilable", repeat = 0, k = 0.8):
 
 	to_print = 0
-	raw_train_data = stat.get_featurematrix(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print)
+	raw_train_data, raw_train_results = stat.get_trainingdata(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print, mode = mode, repeat = repeat)
 	t0 = time()
-	U, s, V = np.linalg.svd(raw_train_data, full_matrices=True)
+	# k = 0.8
+
+	# # print raw_train_data
+	# print raw_train_data
+	# print raw_train_results
+
+	split_point = int(k*input_size+1)
+	train_data = raw_train_data[0:split_point,:]
+	train_results = raw_train_results[:split_point]
+
+	# print train_data
+	# print train_results
+
+	test_data = raw_train_data[split_point:,:]
+	test_results = raw_train_results[split_point:]
+	
+	U, s, V = np.linalg.svd(train_data, full_matrices=True)
 	print("SVD decomposition done in %fs" % (time() - t0))
 	square_sum_s = np.square(s).sum()
 	#not sure if this is the most optimal way for finding the sum of squares
@@ -64,7 +80,12 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	print "count = "+str(count)
 	x = np.delete(V, np.s_[count::1], 0)
 	processedV = np.transpose(x)
-	X = np.dot(raw_train_data, processedV)
+	train_X = np.dot(train_data, processedV)
+	test_X = np.dot(test_data, processedV)
+	
+	# X = X_raw[0:k*input_size + 1, :]
+	# test_X = X_raw[k*input_size+1:,:]
+
 	
 	# print "count = "+str(count)
 	# print "V.shape = "+str(V.shape)
@@ -78,12 +99,15 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	
 	# print "X.shape = "+str(X.shape)	
 
-	train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
+	# train_results = stat.get_trainmatrix(input_size, read_database = read_database, to_print = to_print)
 	
 	mlb = MultiLabelBinarizer()
-	Y = mlb.fit_transform(train_results)
+	train_Y = mlb.fit_transform(train_results) 
+	test_Y = mlb.fit_transform(test_results)
+
 
 	# print Y.shape
+	# test_X = X[0:k*input_size,:]
 
 	if(one_vs_one == 1):
 		clf = OneVsOneClassifier(svm.LinearSVC(random_state=0, max_iter =10000, verbose = 0))
@@ -96,10 +120,11 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 		elif model == "SVC":
 			print "Showing Results for one vs rest multilable classifier using SVC model"
 			clf = OneVsRestClassifier(svm.SVC(verbose = 0))
-		scores = clf.fit(X, Y).decision_function(X)
+		clf.fit(train_X, train_Y)
+		scores = clf.decision_function(test_X)
 			# print len(scores.shape)
 		indices = scores.argmax(axis = 1)
-		prediction_Y  = np.zeros(Y.shape)
+		prediction_Y  = np.zeros(test_Y.shape)
 			# print prediction_Y.shape
 		for i in range(0, len(indices)):
 			prediction_Y[i][indices[i]] = 1	
@@ -108,52 +133,8 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
 	#class sklearn.svm.SVC(C=1.0, kernel='rbf', degree=3, gamma=0.0, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, random_state=None)
 
-	# 
-
-	
-
-	# if(len(scores.shape) == 1):
-	# 	indices = (scores > 0).astype(np.int)
-	# else:
-	# 	indices = scores.argmax(axis = 1)
-	# print indices
-	# print type(clf.classes_[indices])
-	# prediction_Y = clf.classes_[indices]
-
-	# print prediction_Y
-
-	# print indices.shape
-	# print type(indices.shape)
-
-	
-	# print type(prediction_Y)
-	# print prediction_Y
-
-	# def shagun_predict()
-	#     def predict(self, X):
- #        """Predict class labels for samples in X.
- #        Parameters
- #        ----------
- #        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
- #            Samples.
- #        Returns
- #        -------
- #        C : array, shape = [n_samples]
- #            Predicted class label per sample.
- #        """
- #        scores = self.decision_function(X)
- #        if len(scores.shape) == 1:
- #            indices = (scores > 0).astype(np.int)
- #        else:
- #            indices = scores.argmax(axis=1)
- #        return self.classes_[indices]
-
-
-	# # prediction_Y = OneVsRestClassifier(SVC(random_state=0, verbose = 0)).fit(train_data, Y).predict(train_data)
-	# # print type(prediction_Y)
-	
 	prediction = mlb.inverse_transform(prediction_Y)
-	# # print prediction
+	# print prediction
 	# for i in prediction:
 	# 	print i
 	# print "\n"
@@ -163,16 +144,17 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	# # # # print Y
 	# print Y
 	# print prediction_Y
-	evaluate.accuracy_atleast_one_match(train_results, prediction)
+	evaluate.accuracy_atleast_one_match(test_results, prediction)
 	evaluate.accuracy_null_results(prediction)
-	evaluate.accuracy_exact_match(train_results, prediction)
-	evaluate.accuracy(train_results, prediction)
-	evaluate.precision(train_results, prediction)
-	evaluate.recall(train_results, prediction)
+	evaluate.accuracy_exact_match(test_results, prediction)
+	evaluate.accuracy(test_results, prediction)
+	evaluate.precision(test_results, prediction)
+	evaluate.recall(test_results, prediction)
+	evaluate.hamming_loss(test_results, prediction)
 	print raw_train_data.shape
 	# print train_results
 	# print prediction
 
 
 if __name__ == "__main__":
-	predict(1000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "SVC")
+	predict(1000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode="multilabel", repeat = 0, k = 0.8)
