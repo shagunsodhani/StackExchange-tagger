@@ -43,7 +43,7 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode = "multilable", repeat = 0, k = 0.8, max_number_of_tags = 5):
+def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode = "multilable", repeat = 0, k = 0.8, max_number_of_tags = 5, max_iter = 100000):
 
 	to_print = 0
 	raw_train_data, raw_train_results = stat.get_trainingdata(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print, mode = mode, repeat = repeat, max_number_of_tags = max_number_of_tags)
@@ -55,15 +55,16 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	# print raw_train_results
 
 	split_point = int(k*input_size)
-	print split_point
+	# print split_point
 	train_data = raw_train_data[0:split_point,:]
-	# train_results = raw_train_results[0:split_point]
-
+	train_results = raw_train_results[0:split_point]
+	# print train_results
 	# print train_data
 	# print train_results
 
 	test_data = raw_train_data[split_point:,:]
 	test_results = raw_train_results[split_point:]
+	# print test_results
 	
 	U, s, V = np.linalg.svd(train_data, full_matrices=True)
 	print("SVD decomposition done in %fs" % (time() - t0))
@@ -125,48 +126,83 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	else:
 		if model == "LinearSVC":
 			print "Showing Results for one vs rest multilabel classifier using LinearSVC model"
-			clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter =10000, verbose = 0))
+			clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter = max_iter, verbose = 0))
 			
 		elif model == "SVC":
 			print "Showing Results for one vs rest multilabel classifier using SVC model"
-			clf = OneVsRestClassifier(svm.SVC(verbose = 0))
+			clf = OneVsRestClassifier(svm.SVC(max_iter = max_iter, verbose = 0))
 		clf.fit(train_X, train_Y)
+		print clf.get_params
 		scores = clf.decision_function(test_X)
-			# print len(scores.shape)
+		scores_train = clf.decision_function(train_X)
+		# print len(scores.shape)
+		# print len(scores_train.shape)
+		# print scores
+		# print "deathnote"
+		# print scores_train
 		indices = scores.argmax(axis = 1)
-		prediction_Y  = np.zeros(scores.shape)
+		indices_train = scores_train.argmax(axis = 1)
 
+		prediction_Y  = np.zeros(scores.shape)
+		prediction_train = np.zeros(scores_train.shape)
 
 			# print prediction_Y.shape
 		for i in range(0, len(indices)):
 			prediction_Y[i][indices[i]] = 1
+
+		for i in range(0, len(indices_train)):
+			prediction_train[i][indices_train[i]] = 1
+
 
 
 	#class sklearn.svm.LinearSVC(penalty='l2', loss='squared_hinge', dual=True, tol=0.0001, C=1.0, multi_class='ovr', fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, max_iter=1000
 	#class sklearn.svm.SVC(C=1.0, kernel='rbf', degree=3, gamma=0.0, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, random_state=None)
 
 	prediction = mlb.inverse_transform(prediction_Y)
-	print prediction
-	for i in prediction:
-		print i
-	print "\n"
-	for i in test_results:
-		print i
-	print clf.decision_function(test_X)
-	# # # print Y
-	print test_Y
-	print prediction_Y
+	# print prediction
+	# for i in prediction:
+	# 	print i
+	# print "\n"
+	# for i in test_results:
+	# 	print i
+	# print clf.decision_function(test_X)
+	# # # # print Y
+	# print test_Y
+	print "Testing Error : "
 	evaluate.accuracy_atleast_one_match(test_results, prediction)
 	evaluate.accuracy_null_results(prediction)
 	evaluate.accuracy_exact_match(test_results, prediction)
-	evaluate.accuracy(test_results, prediction)
-	evaluate.precision(test_results, prediction)
-	evaluate.recall(test_results, prediction)
-	evaluate.hamming_loss(test_results, prediction)
-	print raw_train_data.shape
+	evaluate.accuracy_multilabel(test_results, prediction)
+	evaluate.precision_multilabel(test_results, prediction)
+	evaluate.recall_multilabel(test_results, prediction)
+	evaluate.hamming_loss_multilabel(test_results, prediction)
+	
 	# print train_results
 	# print prediction
+	# print prediction
+	print "Training Error : "
+	prediction = mlb.inverse_transform(prediction_train)
+	# for i in prediction:
+	# 	print i
+	# print "\n"
+	# for i in test_results:
+	# 	print i
+	# print clf.decision_function(test_X)
+	# # # # print Y
+	# print test_Y
+	# print prediction_Y
+	evaluate.accuracy_atleast_one_match(train_results, prediction)
+	evaluate.accuracy_null_results(prediction)
+	evaluate.accuracy_exact_match(train_results, prediction)
+	evaluate.accuracy_multilabel(train_results, prediction)
+	evaluate.precision_multilabel(train_results, prediction)
+	evaluate.recall_multilabel(train_results, prediction)
+	evaluate.hamming_loss_multilabel(train_results, prediction)
+	
+	# print raw_train_data.shape
+
+
 
 
 if __name__ == "__main__":
-	predict(20, select_transform = 2, read_database = 1, one_vs_one = 0, model = "SVC", mode="multiclass", repeat = 0, k = 0.8, max_number_of_tags = 1)
+	predict(1000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "SVC", mode="multiclass", repeat = 0, k = 0.8, max_number_of_tags = 2, max_iter = 200)
