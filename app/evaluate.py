@@ -83,7 +83,6 @@ def hamming_loss_multilabel(actual, prediction, verbose = 1):
 		print "Hamming Loss = "+str(hamming_loss)
 	return hamming_loss
 
-
 def accuracy_multilabel(actual, prediction, verbose = 1):
 	'''
 		actual - list of actual results
@@ -109,7 +108,6 @@ def accuracy_multilabel(actual, prediction, verbose = 1):
 	if (verbose):
 		print "Accuracy (Godbole & Sarawagi) = "+str(accuracy)
 	return accuracy
-
 
 def precision_multilabel(actual, prediction, verbose = 1):
 	'''

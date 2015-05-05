@@ -82,4 +82,4 @@ def generate_data(tag_count, question_count):
 						break;
 
 if __name__ == "__main__":
-	generate_data(100, 100000)
+	generate_data(10, 40000)

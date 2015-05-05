@@ -3,6 +3,7 @@ import os
 import json
 import string
 import operator
+import pickle
 from time import time
 
 import numpy as np
@@ -43,7 +44,7 @@ def input_representation(result):
 	for j in tag_count:
 		print str(j)+" : "+str(tag_count[j])
 
-def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode = "multilable", repeat = 0, k = 0.8, max_number_of_tags = 5, max_iter = 100000):
+def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode = "multilable", repeat = 0, k = 0.8, max_number_of_tags = 5, max_iter = 100000, use_cache = 0):
 
 	to_print = 0
 	raw_train_data, raw_train_results = stat.get_trainingdata(input_size, select_transform = select_transform, read_database = read_database, to_print = to_print, mode = mode, repeat = repeat, max_number_of_tags = max_number_of_tags)
@@ -66,7 +67,28 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	test_results = raw_train_results[split_point:]
 	# print test_results
 	
-	U, s, V = np.linalg.svd(train_data, full_matrices=True)
+	fname_U = "SVD_U.txt"
+	fname_V = "SVD_V.txt"
+	fname_S = "SVD_S.txt"
+
+	if use_cache==1:
+		with open(fname_U, 'rb') as f:
+				U = pickle.load(f)
+		with open(fname_V, 'rb') as f:
+				V = pickle.load(f)
+		with open(fname_S, 'rb') as f:
+				s = pickle.load(f)
+		print "Using SVD from file"
+	else:
+		U, s, V = np.linalg.svd(train_data, full_matrices=True)
+		with open(fname_U, 'wb') as f:
+				pickle.dump(U, f)
+		with open(fname_V, 'wb') as f:
+				pickle.dump(V, f)
+		with open(fname_S, 'wb') as f:
+				pickle.dump(s, f)
+		print "Using SVD by calculation"
+
 	print("SVD decomposition done in %fs" % (time() - t0))
 	square_sum_s = np.square(s).sum()
 	#not sure if this is the most optimal way for finding the sum of squares
@@ -126,20 +148,16 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 	else:
 		if model == "LinearSVC":
 			print "Showing Results for one vs rest multilabel classifier using LinearSVC model"
-			clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = False, max_iter = max_iter, verbose = 0))
+			clf = OneVsRestClassifier(svm.LinearSVC(random_state=0, dual = True, max_iter = max_iter, verbose = 0, C = 0.001, loss = "squared_hinge", multi_class="crammer_singer"))
 			
 		elif model == "SVC":
 			print "Showing Results for one vs rest multilabel classifier using SVC model"
-			clf = OneVsRestClassifier(svm.SVC(max_iter = max_iter, verbose = 0))
+			clf = OneVsRestClassifier(svm.SVC(C = 0.001, kernel = 'poly',  max_iter = max_iter, verbose = 0, degree = 3))
 		clf.fit(train_X, train_Y)
 		print clf.get_params
 		scores = clf.decision_function(test_X)
 		scores_train = clf.decision_function(train_X)
-		# print len(scores.shape)
-		# print len(scores_train.shape)
-		# print scores
-		# print "deathnote"
-		# print scores_train
+
 		indices = scores.argmax(axis = 1)
 		indices_train = scores_train.argmax(axis = 1)
 
@@ -205,4 +223,4 @@ def predict(input_size = 100000, select_transform = 1, read_database = 1, one_vs
 
 
 if __name__ == "__main__":
-	predict(1000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "SVC", mode="multiclass", repeat = 0, k = 0.8, max_number_of_tags = 2, max_iter = 200)
+	predict(10000, select_transform = 2, read_database = 1, one_vs_one = 0, model = "LinearSVC", mode="multiclass", repeat = 0, k = 0.8, max_number_of_tags = 2, max_iter = 10000, use_cache = 1)

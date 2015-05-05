@@ -332,7 +332,7 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 							# print i
 							question_tag[question_count] = []
 							question_tag[question_count].append(i)
-							#can be done in a single step - then do nit
+							#can be done in a single step - then do it
 							tag_set.add(i)
 							question_count+=1
 							corpus.append(processed_body.strip())
@@ -355,7 +355,7 @@ def get_trainingdata(input_size = 100000, select_transform = 1, read_database = 
 					# print i
 					tag_dict[i] = tag_count
 					tag_count+=1
-				# print "number of unique tags = "+str(tag_count)
+				print "number of unique tags = "+str(tag_count)
 				train_matrix = np.zeros((input_size, tag_count), dtype = np.int)
 				for i in question_tag:
 					for j in question_tag[i]:
