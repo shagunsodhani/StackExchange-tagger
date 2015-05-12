@@ -1,2 +1,3 @@
 # StackExchange-tagger
-Tagger for questions posted on StackExchange Network 
+The goal of our project is to develop an accurate tagger for questions posted on Stack Exchange. Our problem is an instance of the more general problem of developing accurate classifiers for large scale text datasets. We are tackling the multilabel classification problem where each item (in this case, question) can belong to multiple classes (in this case, tags). We are predicting the tags (or keywords) for a particular Stack Exchange post given only the question text and the title of the post. In the process, we compare the performance of Support Vector Classification (SVC) for different kernel functions, loss function, etc. We found linear SVC with Crammer Singer technique produces best results. Detailed report is available here(https://sites.google.com/site/sanketmehtaiitr/home/stack-exchange-tagger).
+
