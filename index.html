@@ -22,18 +22,90 @@
       <h1>
 <a id="stackexchange-tagger" class="anchor" href="#stackexchange-tagger" aria-hidden="true"><span class="octicon octicon-link"></span></a>StackExchange Tagger</h1>
 
-<p>The goal of this project is to develop an accurate tagger for questions posted on Stack Exchange. Our problem is an instance of the more general problem of developing accurate classifiers for large scale text datasets. We are tackling the multilabel classification problem where each item (in this case, question) can belong to multiple classes (in this case, tags). We are predicting the tags (or keywords) for a particular Stack Exchange post given only the question text and the title of the post. In the process, we compare the performance of Support Vector Classification (SVC) for different kernel functions, loss function, etc. We found linear SVC with Crammer Singer technique produces best results. Detailed report is available <a href="https://sites.google.com/site/sanketmehtaiitr/home/stack-exchange-tagger">here</a>.</p>
+<p>The goal of our project is to develop an accurate tagger for questions posted on Stack Exchange. Our problem is an instance of the more general problem of developing accurate classifiers for large scale text datasets. We are tackling the multilabel classification problem where each item (in this case, question) can belong to multiple classes (in this case, tags). We are predicting the tags (or keywords) for a particular Stack Exchange post given only the question text and the title of the post. In the process, we compare the performance of Support Vector Classification (SVC) for different kernel functions, loss function, etc. </p>
 
-<p>This work has been done as a part of a course project for Artificial Neural Network (IEE-03) at <a href="http://www.iitr.ac.in/">IIT Roorkee</a>.</p>
+<p>We found linear SVC with Crammer Singer technique produces best results. </p>
 
-<p>Team:</p>
+<h1>
+<a id="some-results" class="anchor" href="#some-results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Some Results</h1>
+
+<p>Testing Error for SVC with different kernel functions where number of iterations = 10,000</p>
+
+<table>
+<thead>
+<tr>
+<th>Kernel</th>
+<th>C = 1000(hard-margin)</th>
+<th>C = 0.001(soft-margin)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RBF</td>
+<td>43.1 %</td>
+<td>48.5 %</td>
+</tr>
+<tr>
+<td>Linear</td>
+<td>51.9 %</td>
+<td>45.2 %</td>
+</tr>
+<tr>
+<td>Polynomial (n=2)</td>
+<td>54.4 %</td>
+<td>65 %</td>
+</tr>
+<tr>
+<td>Polynomial (n=3)</td>
+<td>72.2 %</td>
+<td>84.4 %</td>
+</tr>
+<tr>
+<td>Sigmoid</td>
+<td>84.4 %</td>
+<td>84.4 %</td>
+</tr>
+</tbody>
+</table>
+
+<p>Testing Error for Linear SVC with different techniques where C = 0.001 (soft-margin) and number of iterations = 10,000</p>
+
+<table>
+<thead>
+<tr>
+<th>Technique</th>
+<th>Hinge Loss Function</th>
+<th>Square Hinge Loss Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One-vs-rest</td>
+<td>47.59 %</td>
+<td>68 %</td>
+</tr>
+<tr>
+<td>Crammer Singer</td>
+<td>45.25 %</td>
+<td>45.25%</td>
+</tr>
+</tbody>
+</table>
+
+<h1>
+<a id="report" class="anchor" href="#report" aria-hidden="true"><span class="octicon octicon-link"></span></a>Report</h1>
+
+<p>Our detailed report and results are available <a href="https://sites.google.com/site/sanketmehtaiitr/home/stack-exchange-tagger">here</a>.</p>
+
+<h1>
+<a id="team" class="anchor" href="#team" aria-hidden="true"><span class="octicon octicon-link"></span></a>Team</h1>
 
 <ul>
-<li>   <a href="https://github.com/sanketvmehta">Sanket Mehta</a>
-</li>
-<li>   <a href="https://github.com/shagunsodhani">Shagun Sodhani</a>
-</li>
+<li><a href="https://twitter.com/sanketvmehta">Sanket Mehta</a></li>
+<li><a href="https://twitter.com/shagunsodhani">Shagun Sodhani</a></li>
 </ul>
+
+<p>This work has been done as a part of a course project for Artificial Neural Network (IEE-03) at IIT Roorkee. </p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/shagunsodhani/StackExchange-tagger">StackExchange Tagger</a> is maintained by <a href="https://github.com/shagunsodhani">shagunsodhani</a>.</span>
