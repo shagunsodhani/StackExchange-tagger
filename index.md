@@ -1,4 +1,6 @@
 # StackExchange Tagger
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.972132.svg)](https://doi.org/10.5281/zenodo.972132)
+
 
 The goal of our project is to develop an accurate tagger for questions posted on Stack Exchange. Our problem is an instance of the more general problem of developing accurate classifiers for large scale text datasets. We are tackling the multilabel classification problem where each item (in this case, question) can belong to multiple classes (in this case, tags). We are predicting the tags (or keywords) for a particular Stack Exchange post given only the question text and the title of the post. In the process, we compare the performance of Support Vector Classification (SVC) for different kernel functions, loss function, etc. 
 
